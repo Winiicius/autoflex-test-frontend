@@ -1,5 +1,5 @@
 import { http } from "../../shared/api/http";
-import type { ProductionCapacityItem } from "./types";
+import type { ProductionCapacityItem } from "./type";
 
 export const productionService = {
   listCapacity: async (): Promise<ProductionCapacityItem[]> => {
