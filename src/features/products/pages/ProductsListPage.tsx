@@ -16,14 +16,18 @@ import {
 import { useEffect, useState } from "react";
 import { FiEdit, FiPlus, FiTrash } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { productService } from "../ProductService";
+import { productService } from "../productService";
 import type { Product } from "../types";
+import { useAuth } from "../../auth/AuthContext";
+import { isAdmin } from "../../auth/permissions";
 
 export function ProductsListPage() {
     const toast = useToast();
 
     const [items, setItems] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+    const { user } = useAuth();
+    const canManage = isAdmin(user);
 
     const load = async () => {
         setLoading(true);
@@ -67,9 +71,12 @@ export function ProductsListPage() {
             <HStack justify="space-between" mb={4}>
                 <Heading size="lg">Products</Heading>
 
-                <Button as={Link} to="/products/new" leftIcon={<FiPlus />}>
-                    New Product
-                </Button>
+                {canManage && (
+                    <Button as={Link} to="/products/new" leftIcon={<FiPlus />}>
+                        New Product
+                    </Button>
+                )}
+
             </HStack>
 
             {loading ? (
@@ -94,25 +101,27 @@ export function ProductsListPage() {
                                     <Td isNumeric>{item.price.toFixed(2)}</Td>
 
                                     <Td>
-                                        <HStack justify="flex-end">
-                                            <IconButton
-                                                aria-label="Edit"
-                                                icon={<FiEdit />}
-                                                as={Link}
-                                                to={`/products/${item.id}`}
-                                                size="sm"
-                                                variant="ghost"
-                                            />
+                                        {canManage && (
+                                            <HStack justify="flex-end">
+                                                <IconButton
+                                                    aria-label="Edit"
+                                                    icon={<FiEdit />}
+                                                    as={Link}
+                                                    to={`/products/${item.id}`}
+                                                    size="sm"
+                                                    variant="ghost"
+                                                />
 
-                                            <IconButton
-                                                aria-label="Delete"
-                                                icon={<FiTrash />}
-                                                size="sm"
-                                                colorScheme="red"
-                                                variant="ghost"
-                                                onClick={() => onDelete(item.id)}
-                                            />
-                                        </HStack>
+                                                <IconButton
+                                                    aria-label="Delete"
+                                                    icon={<FiTrash />}
+                                                    size="sm"
+                                                    colorScheme="red"
+                                                    variant="ghost"
+                                                    onClick={() => onDelete(item.id)}
+                                                />
+                                            </HStack>
+                                        )}
                                     </Td>
                                 </Tr>
                             ))}
