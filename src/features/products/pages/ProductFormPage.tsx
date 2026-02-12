@@ -2,6 +2,7 @@ import {
     Box,
     Button,
     FormControl,
+    FormErrorMessage,
     FormLabel,
     Heading,
     HStack,
@@ -12,38 +13,55 @@ import {
     Text,
     useToast,
 } from "@chakra-ui/react";
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
+import { useForm, useFieldArray } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
+
 import { productService } from "../productService";
 import { rawMaterialService } from "../../raw-materials/rawMaterialService";
-import type { ProductRequest } from "../types";
 import type { RawMaterial } from "../../raw-materials/types";
+
 import { useAuth } from "../../auth/AuthContext";
 import { isAdmin } from "../../auth/permissions";
+
+import { productSchema } from "../product.schema";
+import type { ProductFormValues } from "../product.schema";
 
 export function ProductFormPage() {
     const { id } = useParams();
     const isEdit = Boolean(id);
 
-    const { user } = useAuth();
-    const canManage = isAdmin(user);
-
-
-
     const toast = useToast();
     const navigate = useNavigate();
 
-    const [loading, setLoading] = useState(true);
-    const [saving, setSaving] = useState(false);
+    const { user } = useAuth();
+    const canManage = isAdmin(user);
 
-    const [form, setForm] = useState<ProductRequest>({
-        code: "",
-        name: "",
-        price: 0,
-        materials: [],
+    const [loading, setLoading] = useState(true);
+    const [allMaterials, setAllMaterials] = useState<RawMaterial[]>([]);
+
+    const {
+        register,
+        control,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+        watch,
+    } = useForm<ProductFormValues>({
+        resolver: zodResolver(productSchema),
+        defaultValues: {
+            code: "",
+            name: "",
+            price: 0,
+            materials: [{ rawMaterialId: 0, quantity: 0 }],
+        },
     });
 
-    const [allMaterials, setAllMaterials] = useState<RawMaterial[]>([]);
+    const { fields, append, remove } = useFieldArray({
+        control,
+        name: "materials",
+    });
 
     useEffect(() => {
         if (!canManage) navigate("/", { replace: true });
@@ -52,13 +70,12 @@ export function ProductFormPage() {
     useEffect(() => {
         const load = async () => {
             try {
-                const rawMaterials = await rawMaterialService.list();
-                setAllMaterials(rawMaterials);
+                const rms = await rawMaterialService.list();
+                setAllMaterials(rms);
 
                 if (isEdit) {
                     const product = await productService.getById(Number(id));
-
-                    setForm({
+                    reset({
                         code: product.code,
                         name: product.name,
                         price: product.price,
@@ -66,7 +83,7 @@ export function ProductFormPage() {
                             product.materials?.map((m) => ({
                                 rawMaterialId: m.rawMaterialId,
                                 quantity: m.quantity,
-                            })) ?? [],
+                            })) ?? [{ rawMaterialId: 0, quantity: 0 }],
                     });
                 }
             } catch (err: any) {
@@ -81,69 +98,20 @@ export function ProductFormPage() {
         };
 
         load();
-    }, [id, isEdit, toast]);
+    }, [id, isEdit, reset, toast]);
 
-    const onChange = (field: keyof ProductRequest, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
-    };
+    const selectedIds = watch("materials")?.map((m) => Number(m.rawMaterialId)) ?? [];
+    const selectedSet = useMemo(() => new Set(selectedIds.filter((x) => x > 0)), [selectedIds]);
 
-    const updateMaterial = (index: number, field: string, value: any) => {
-        const updated = [...(form.materials ?? [])];
-        updated[index] = { ...updated[index], [field]: value };
-        setForm((prev) => ({ ...prev, materials: updated }));
-    };
-
-    const addMaterial = () => {
-        setForm((prev) => ({
-            ...prev,
-            materials: [...(prev.materials ?? []), { rawMaterialId: 0, quantity: 0 }],
-        }));
-    };
-
-    const removeMaterial = (index: number) => {
-        const updated = [...(form.materials ?? [])];
-        updated.splice(index, 1);
-        setForm((prev) => ({ ...prev, materials: updated }));
-    };
-
-    const validate = () => {
-        if (!form.code || !form.name) {
-            toast({ title: "Code and name are required", status: "warning" });
-            return false;
-        }
-
-        if (!form.materials || form.materials.length === 0) {
-            toast({ title: "At least one material is required", status: "warning" });
-            return false;
-        }
-
-        for (const mat of form.materials) {
-            if (!mat.rawMaterialId || mat.quantity <= 0) {
-                toast({
-                    title: "Each material must have valid material and quantity > 0",
-                    status: "warning",
-                });
-                return false;
-            }
-        }
-
-        return true;
-    };
-
-    const onSubmit = async () => {
-        if (!validate()) return;
-
-        setSaving(true);
-
+    const onSubmit = async (values: ProductFormValues) => {
         try {
             if (isEdit) {
-                await productService.update(Number(id), form);
+                await productService.update(Number(id), values);
                 toast({ title: "Product updated", status: "success" });
             } else {
-                await productService.create(form);
+                await productService.create(values);
                 toast({ title: "Product created", status: "success" });
             }
-
             navigate("/products");
         } catch (err: any) {
             toast({
@@ -151,8 +119,6 @@ export function ProductFormPage() {
                 description: err?.message,
                 status: "error",
             });
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -164,91 +130,99 @@ export function ProductFormPage() {
                 {isEdit ? "Edit Product" : "New Product"}
             </Heading>
 
-            <Stack spacing={4}>
-                <FormControl>
-                    <FormLabel>Code</FormLabel>
-                    <Input
-                        value={form.code}
-                        onChange={(e) => onChange("code", e.target.value)}
-                    />
-                </FormControl>
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <Stack spacing={4}>
+                    <FormControl isInvalid={!!errors.code}>
+                        <FormLabel>Code</FormLabel>
+                        <Input {...register("code")} />
+                        <FormErrorMessage>{errors.code?.message}</FormErrorMessage>
+                    </FormControl>
 
-                <FormControl>
-                    <FormLabel>Name</FormLabel>
-                    <Input
-                        value={form.name}
-                        onChange={(e) => onChange("name", e.target.value)}
-                    />
-                </FormControl>
+                    <FormControl isInvalid={!!errors.name}>
+                        <FormLabel>Name</FormLabel>
+                        <Input {...register("name")} />
+                        <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
+                    </FormControl>
 
-                <FormControl>
-                    <FormLabel>Price</FormLabel>
-                    <Input
-                        type="number"
-                        value={form.price}
-                        onChange={(e) => onChange("price", Number(e.target.value))}
-                    />
-                </FormControl>
+                    <FormControl isInvalid={!!errors.price}>
+                        <FormLabel>Price</FormLabel>
+                        <Input type="number" step="0.01" {...register("price")} />
+                        <FormErrorMessage>{errors.price?.message}</FormErrorMessage>
+                    </FormControl>
 
-                {/* MATERIALS SECTION */}
+                    <Box borderWidth="1px" borderRadius="8px" p={4}>
+                        <HStack justify="space-between" mb={2}>
+                            <Heading size="md">Materials</Heading>
+                            <Button
+                                variant="outline"
+                                onClick={() => append({ rawMaterialId: 0, quantity: 0 })}
+                            >
+                                Add
+                            </Button>
+                        </HStack>
 
-                <Box borderWidth="1px" borderRadius="8px" p={4}>
-                    <Heading size="md" mb={3}>
-                        Materials
-                    </Heading>
+                        {errors.materials?.message && (
+                            <Text color="red.500" fontSize="sm" mb={2}>
+                                {errors.materials.message as string}
+                            </Text>
+                        )}
 
-                    <Stack spacing={3}>
-                        {form.materials?.map((mat, index) => (
-                            <HStack key={index}>
-                                <Select
-                                    value={mat.rawMaterialId}
-                                    onChange={(e) =>
-                                        updateMaterial(index, "rawMaterialId", Number(e.target.value))
-                                    }
-                                >
-                                    <option value="">Select material</option>
-                                    {allMaterials.map((rm) => (
-                                        <option key={rm.id} value={rm.id}>
-                                            {rm.name}
-                                        </option>
-                                    ))}
-                                </Select>
+                        <Stack spacing={3}>
+                            {fields.map((field, index) => {
+                                const rmError = errors.materials?.[index]?.rawMaterialId?.message;
+                                const qtyError = errors.materials?.[index]?.quantity?.message;
 
-                                <Input
-                                    type="number"
-                                    placeholder="Quantity"
-                                    value={mat.quantity}
-                                    onChange={(e) =>
-                                        updateMaterial(index, "quantity", Number(e.target.value))
-                                    }
-                                />
+                                return (
+                                    <HStack key={field.id} align="start">
+                                        <FormControl isInvalid={!!rmError}>
+                                            <FormLabel fontSize="sm">Material</FormLabel>
+                                            <Select {...register(`materials.${index}.rawMaterialId`)}>
+                                                <option value={0}>Select material</option>
+                                                {allMaterials.map((rm) => {
+                                                    const current = Number(selectedIds[index]);
+                                                    const disabled = selectedSet.has(rm.id) && rm.id !== current;
 
-                                <Button
-                                    colorScheme="red"
-                                    variant="ghost"
-                                    onClick={() => removeMaterial(index)}
-                                >
-                                    Remove
-                                </Button>
-                            </HStack>
-                        ))}
+                                                    return (
+                                                        <option key={rm.id} value={rm.id} disabled={disabled}>
+                                                            {rm.code} — {rm.name}
+                                                        </option>
+                                                    );
+                                                })}
+                                            </Select>
+                                            <FormErrorMessage>{rmError as string}</FormErrorMessage>
+                                        </FormControl>
 
-                        <Button variant="outline" onClick={addMaterial}>
-                            Add Material
+                                        <FormControl isInvalid={!!qtyError}>
+                                            <FormLabel fontSize="sm">Quantity</FormLabel>
+                                            <Input type="number" step="0.01" {...register(`materials.${index}.quantity`)} />
+                                            <FormErrorMessage>{qtyError as string}</FormErrorMessage>
+                                        </FormControl>
+
+                                        <Button
+                                            mt="28px"
+                                            colorScheme="red"
+                                            variant="ghost"
+                                            onClick={() => remove(index)}
+                                            isDisabled={fields.length === 1}
+                                        >
+                                            Remove
+                                        </Button>
+                                    </HStack>
+                                );
+                            })}
+                        </Stack>
+                    </Box>
+
+                    <HStack justify="flex-end">
+                        <Button variant="outline" onClick={() => navigate(-1)}>
+                            Cancel
                         </Button>
-                    </Stack>
-                </Box>
-
-                <HStack justify="flex-end">
-                    <Button variant="outline" onClick={() => navigate(-1)}>
-                        Cancel
-                    </Button>
-
-                    <Button onClick={onSubmit} isLoading={saving}>
-                        Save
-                    </Button>
-                </HStack>
-            </Stack>
+                        <Button type="submit" isLoading={isSubmitting}>
+                            Save
+                        </Button>
+                    </HStack>
+                </Stack>
+            </form>
         </Box>
     );
 }
