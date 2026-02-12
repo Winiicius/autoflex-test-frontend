@@ -1,12 +1,16 @@
-import { StrictMode } from 'react'
-import { createRoot } from 'react-dom/client'
-import './index.css'
-import { Provider } from './components/ui/provider'
+import React from "react";
+import ReactDOM from "react-dom/client";
+import { ChakraProvider } from "@chakra-ui/react";
+import { theme } from "./app/providers/theme";
+import App from "./App";
+import { AuthProvider } from "./features/auth/AuthContext";
 
-createRoot(document.getElementById('root')!).render(
-  <StrictMode>
-    <Provider>
-
-    </Provider>
-  </StrictMode>,
-)
+ReactDOM.createRoot(document.getElementById("root")!).render(
+  <React.StrictMode>
+    <ChakraProvider theme={theme}>
+      <AuthProvider>
+        <App />
+      </AuthProvider>
+    </ChakraProvider>
+  </React.StrictMode>
+);
