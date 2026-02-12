@@ -2,6 +2,7 @@ import {
     Box,
     Button,
     FormControl,
+    FormErrorMessage,
     FormLabel,
     Heading,
     HStack,
@@ -14,9 +15,12 @@ import {
 import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { rawMaterialService } from "../rawMaterialService";
-import type { RawMaterialRequest } from "../types";
 import { useAuth } from "../../auth/AuthContext";
 import { isAdmin } from "../../auth/permissions";
+import { rawMaterialSchema } from "../rawMaterial.schema";
+import type { RawMaterialFormValues } from "../rawMaterial.schema";
+import { useForm } from "react-hook-form";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export function RawMaterialFormPage() {
     const { id } = useParams();
@@ -29,17 +33,26 @@ export function RawMaterialFormPage() {
     const navigate = useNavigate();
 
     const [loading, setLoading] = useState(isEdit);
-    const [saving, setSaving] = useState(false);
 
-    const [form, setForm] = useState<RawMaterialRequest>({
-        code: "",
-        name: "",
-        unit: "KG",
-        stockQuantity: 0,
+    const {
+        register,
+        handleSubmit,
+        reset,
+        formState: { errors, isSubmitting },
+    } = useForm<RawMaterialFormValues>({
+        resolver: zodResolver(rawMaterialSchema),
+        defaultValues: {
+            code: "",
+            name: "",
+            unit: "KG",
+            stockQuantity: 0,
+        },
     });
 
     useEffect(() => {
-        if (!canManage) navigate("/", { replace: true });
+        if (!canManage) {
+            navigate("/", { replace: true });
+        }
     }, [canManage, navigate]);
 
     useEffect(() => {
@@ -48,7 +61,8 @@ export function RawMaterialFormPage() {
         const load = async () => {
             try {
                 const data = await rawMaterialService.getById(Number(id));
-                setForm({
+
+                reset({
                     code: data.code,
                     name: data.name,
                     unit: data.unit,
@@ -66,21 +80,15 @@ export function RawMaterialFormPage() {
         };
 
         load();
-    }, [id, isEdit, toast]);
+    }, [id, isEdit, reset, toast]);
 
-    const onChange = (field: keyof RawMaterialRequest, value: any) => {
-        setForm((prev) => ({ ...prev, [field]: value }));
-    };
-
-    const onSubmit = async () => {
-        setSaving(true);
-
+    const onSubmit = async (values: RawMaterialFormValues) => {
         try {
             if (isEdit) {
-                await rawMaterialService.update(Number(id), form);
+                await rawMaterialService.update(Number(id), values);
                 toast({ title: "Updated successfully", status: "success" });
             } else {
-                await rawMaterialService.create(form);
+                await rawMaterialService.create(values);
                 toast({ title: "Created successfully", status: "success" });
             }
 
@@ -91,8 +99,6 @@ export function RawMaterialFormPage() {
                 description: err?.message,
                 status: "error",
             });
-        } finally {
-            setSaving(false);
         }
     };
 
@@ -104,57 +110,50 @@ export function RawMaterialFormPage() {
                 {isEdit ? "Edit Raw Material" : "New Raw Material"}
             </Heading>
 
-            <Stack spacing={4}>
-                <FormControl>
-                    <FormLabel>Code</FormLabel>
-                    <Input
-                        value={form.code}
-                        onChange={(e) => onChange("code", e.target.value)}
-                    />
-                </FormControl>
+            <form onSubmit={handleSubmit(onSubmit)}>
+                <Stack spacing={4}>
+                    <FormControl isInvalid={!!errors.code}>
+                        <FormLabel>Code</FormLabel>
+                        <Input {...register("code")} />
+                        <FormErrorMessage>{errors.code?.message}</FormErrorMessage>
+                    </FormControl>
 
-                <FormControl>
-                    <FormLabel>Name</FormLabel>
-                    <Input
-                        value={form.name}
-                        onChange={(e) => onChange("name", e.target.value)}
-                    />
-                </FormControl>
+                    <FormControl isInvalid={!!errors.name}>
+                        <FormLabel>Name</FormLabel>
+                        <Input {...register("name")} />
+                        <FormErrorMessage>{errors.name?.message}</FormErrorMessage>
+                    </FormControl>
 
-                <FormControl>
-                    <FormLabel>Unit</FormLabel>
-                    <Select
-                        value={form.unit}
-                        onChange={(e) => onChange("unit", e.target.value)}
-                    >
-                        <option value="KG">KG</option>
-                        <option value="UNIT">UNIT</option>
-                        <option value="L">L</option>
-                        <option value="M">M</option>
-                    </Select>
-                </FormControl>
+                    <FormControl isInvalid={!!errors.unit}>
+                        <FormLabel>Unit</FormLabel>
+                        <Select {...register("unit")}>
+                            <option value="KG">KG</option>
+                            <option value="UNIT">UNIT</option>
+                            <option value="L">L</option>
+                            <option value="M">M</option>
+                        </Select>
+                        <FormErrorMessage>{errors.unit?.message}</FormErrorMessage>
+                    </FormControl>
 
-                <FormControl>
-                    <FormLabel>Stock Quantity</FormLabel>
-                    <Input
-                        type="number"
-                        value={form.stockQuantity}
-                        onChange={(e) =>
-                            onChange("stockQuantity", Number(e.target.value))
-                        }
-                    />
-                </FormControl>
+                    <FormControl isInvalid={!!errors.stockQuantity}>
+                        <FormLabel>Stock Quantity</FormLabel>
+                        <Input type="number" {...register("stockQuantity")} />
+                        <FormErrorMessage>
+                            {errors.stockQuantity?.message}
+                        </FormErrorMessage>
+                    </FormControl>
 
-                <HStack justify="flex-end">
-                    <Button variant="outline" onClick={() => navigate(-1)}>
-                        Cancel
-                    </Button>
+                    <HStack justify="flex-end">
+                        <Button variant="outline" onClick={() => navigate(-1)}>
+                            Cancel
+                        </Button>
 
-                    <Button onClick={onSubmit} isLoading={saving}>
-                        Save
-                    </Button>
-                </HStack>
-            </Stack>
+                        <Button type="submit" isLoading={isSubmitting}>
+                            Save
+                        </Button>
+                    </HStack>
+                </Stack>
+            </form>
         </Box>
     );
 }
