@@ -2,8 +2,13 @@ import { http } from "../../shared/api/http";
 import type { RawMaterial, RawMaterialRequest } from "./types";
 
 export const rawMaterialService = {
-  list: async (): Promise<RawMaterial[]> => {
-    const { data } = await http.get<RawMaterial[]>("/raw-materials");
+  list: async (params?: {
+    name?: string;
+    code?: string;
+  }): Promise<RawMaterial[]> => {
+    const { data } = await http.get<RawMaterial[]>("/raw-materials", {
+      params,
+    });
     return data;
   },
 
