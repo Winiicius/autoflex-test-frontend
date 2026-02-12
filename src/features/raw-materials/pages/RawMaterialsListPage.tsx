@@ -19,6 +19,8 @@ import { FiEdit, FiTrash, FiPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
 import { rawMaterialService } from "../rawMaterialService";
 import type { RawMaterial } from "../types";
+import { useAuth } from "../../auth/AuthContext";
+import { isAdmin } from "../../auth/permissions";
 
 export function RawMaterialsListPage() {
     const toast = useToast();
@@ -27,6 +29,9 @@ export function RawMaterialsListPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ name: "", code: "" });
     const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+    const { user } = useAuth();
+    const canManage = isAdmin(user);
 
 
     const load = async () => {
@@ -79,12 +84,13 @@ export function RawMaterialsListPage() {
             <HStack justify="space-between" mb={4}>
                 <Heading size="lg">Raw Materials</Heading>
 
-                <Button as={Link} to="/raw-materials/new" leftIcon={<FiPlus />}>
-                    New Raw Material
-                </Button>
+                {canManage && (
+                    <Button as={Link} to="/raw-materials/new" leftIcon={<FiPlus />}>
+                        New Raw Material
+                    </Button>
+                )}
             </HStack>
 
-            {/* Filtros sempre visíveis */}
             <HStack spacing={4} mb={4}>
                 <Input
                     placeholder="Search by code"
@@ -107,7 +113,6 @@ export function RawMaterialsListPage() {
                 </Button>
             </HStack>
 
-            {/* Tabela sempre montada (não perde foco) */}
             <Box position="relative" overflowX="auto" bg="white" borderWidth="1px" borderRadius="8px">
                 {loading && (
                     <Spinner
@@ -138,25 +143,27 @@ export function RawMaterialsListPage() {
                                 <Td isNumeric>{item.stockQuantity}</Td>
 
                                 <Td>
-                                    <HStack justify="flex-end">
-                                        <IconButton
-                                            aria-label="Edit"
-                                            icon={<FiEdit />}
-                                            as={Link}
-                                            to={`/raw-materials/${item.id}`}
-                                            size="sm"
-                                            variant="ghost"
-                                        />
+                                    {canManage && (
+                                        <HStack justify="flex-end">
+                                            <IconButton
+                                                aria-label="Edit"
+                                                icon={<FiEdit />}
+                                                as={Link}
+                                                to={`/raw-materials/${item.id}`}
+                                                size="sm"
+                                                variant="ghost"
+                                            />
 
-                                        <IconButton
-                                            aria-label="Delete"
-                                            icon={<FiTrash />}
-                                            size="sm"
-                                            colorScheme="red"
-                                            variant="ghost"
-                                            onClick={() => onDelete(item.id)}
-                                        />
-                                    </HStack>
+                                            <IconButton
+                                                aria-label="Delete"
+                                                icon={<FiTrash />}
+                                                size="sm"
+                                                colorScheme="red"
+                                                variant="ghost"
+                                                onClick={() => onDelete(item.id)}
+                                            />
+                                        </HStack>
+                                    )}
                                 </Td>
                             </Tr>
                         ))}

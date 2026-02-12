@@ -15,10 +15,15 @@ import { useEffect, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { rawMaterialService } from "../rawMaterialService";
 import type { RawMaterialRequest } from "../types";
+import { useAuth } from "../../auth/AuthContext";
+import { isAdmin } from "../../auth/permissions";
 
 export function RawMaterialFormPage() {
     const { id } = useParams();
     const isEdit = Boolean(id);
+
+    const { user } = useAuth();
+    const canManage = isAdmin(user);
 
     const toast = useToast();
     const navigate = useNavigate();
@@ -32,6 +37,10 @@ export function RawMaterialFormPage() {
         unit: "KG",
         stockQuantity: 0,
     });
+
+    useEffect(() => {
+        if (!canManage) navigate("/", { replace: true });
+    }, [canManage, navigate]);
 
     useEffect(() => {
         if (!isEdit) return;

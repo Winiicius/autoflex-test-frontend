@@ -18,10 +18,17 @@ import { productService } from "../productService";
 import { rawMaterialService } from "../../raw-materials/rawMaterialService";
 import type { ProductRequest } from "../types";
 import type { RawMaterial } from "../../raw-materials/types";
+import { useAuth } from "../../auth/AuthContext";
+import { isAdmin } from "../../auth/permissions";
 
 export function ProductFormPage() {
     const { id } = useParams();
     const isEdit = Boolean(id);
+
+    const { user } = useAuth();
+    const canManage = isAdmin(user);
+
+
 
     const toast = useToast();
     const navigate = useNavigate();
@@ -37,6 +44,10 @@ export function ProductFormPage() {
     });
 
     const [allMaterials, setAllMaterials] = useState<RawMaterial[]>([]);
+
+    useEffect(() => {
+        if (!canManage) navigate("/", { replace: true });
+    }, [canManage, navigate]);
 
     useEffect(() => {
         const load = async () => {
