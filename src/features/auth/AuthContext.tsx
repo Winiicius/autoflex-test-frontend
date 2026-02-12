@@ -1,74 +1,87 @@
-import React, { createContext, useContext, useEffect, useMemo, useState } from "react";
-import type { User } from "./types";
-import { authService } from "./authService";
-import type { LoginRequest } from "./types";
-import { http } from "../../shared/api/http";
+import {
+    createContext,
+    useContext,
+    useEffect,
+    useState,
+    ReactNode,
+} from "react";
+import { Spinner, Center } from "@chakra-ui/react";
 
-type AuthState = {
-    token: string | null;
+interface User {
+    id: number;
+    name: string;
+    email: string;
+    role: string;
+}
+interface AuthContextType {
     user: User | null;
-    isAuthenticated: boolean;
-    login: (payload: LoginRequest) => Promise<void>;
+    token: string | null;
+    isLoading: boolean;
+    login: (data: { token: string; user: User }) => void;
     logout: () => void;
-};
+}
 
-const AuthContext = createContext<AuthState | undefined>(undefined);
+const AuthContext = createContext<AuthContextType | undefined>(undefined);
 
-const STORAGE_KEY = "autoflex.auth";
+interface Props {
+    children: ReactNode;
+}
 
-export function AuthProvider({ children }: { children: React.ReactNode }) {
-    const [token, setToken] = useState<string | null>(null);
+export function AuthProvider({ children }: Props) {
     const [user, setUser] = useState<User | null>(null);
+    const [token, setToken] = useState<string | null>(null);
+    const [loading, setLoading] = useState(true);
 
     useEffect(() => {
-        const raw = localStorage.getItem(STORAGE_KEY);
-        if (!raw) return;
-        try {
-            const parsed = JSON.parse(raw) as { token: string; user: User };
-            setToken(parsed.token);
-            setUser(parsed.user);
-        } catch {
-            localStorage.removeItem(STORAGE_KEY);
+        const storedToken = localStorage.getItem("token");
+        const storedUser = localStorage.getItem("user");
+
+        if (storedToken && storedUser) {
+            setToken(storedToken);
+            setUser(JSON.parse(storedUser));
         }
+
+        setLoading(false);
     }, []);
 
-    useEffect(() => {
-        if (token) {
-            http.defaults.headers.common.Authorization = `Bearer ${token}`;
-        } else {
-            delete http.defaults.headers.common.Authorization;
-        }
-    }, [token]);
+    const login = (data: { token: string; user: User }) => {
+        setToken(data.token);
+        setUser(data.user);
 
-    const login = async (payload: LoginRequest) => {
-        const res = await authService.login(payload);
-        setToken(res.token);
-        setUser(res.user);
-        localStorage.setItem(STORAGE_KEY, JSON.stringify({ token: res.token, user: res.user }));
+        localStorage.setItem("token", data.token);
+        localStorage.setItem("user", JSON.stringify(data.user));
     };
 
     const logout = () => {
         setToken(null);
         setUser(null);
-        localStorage.removeItem(STORAGE_KEY);
+
+        localStorage.removeItem("token");
+        localStorage.removeItem("user");
     };
 
-    const value = useMemo(
-        () => ({
-            token,
-            user,
-            isAuthenticated: Boolean(token),
-            login,
-            logout,
-        }),
-        [token, user]
-    );
+    if (loading) {
+        return (
+            <Center minH="100vh">
+                <Spinner size="lg" />
+            </Center>
+        );
+    }
 
-    return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
+    return (
+        <AuthContext.Provider value={{ user, token, isLoading: loading, login, logout }}>
+
+            {children}
+        </AuthContext.Provider>
+    );
 }
 
 export function useAuth() {
-    const ctx = useContext(AuthContext);
-    if (!ctx) throw new Error("useAuth must be used within AuthProvider");
-    return ctx;
+    const context = useContext(AuthContext);
+
+    if (!context) {
+        throw new Error("useAuth must be used within AuthProvider");
+    }
+
+    return context;
 }
