@@ -8,6 +8,8 @@ import { RawMaterialsListPage } from "./features/raw-materials/pages/RawMaterial
 import { RawMaterialFormPage } from "./features/raw-materials/pages/RawMaterialFormPage";
 import { ProductionPage } from "./features/production/pages/ProductionPage";
 import { ProductFormPage } from "./features/products/pages/ProductFormPage";
+import { NotFoundPage } from "./shared/pages/NotFoundPage";
+
 
 export default function App() {
     return (
@@ -31,10 +33,9 @@ export default function App() {
                     <Route path="/products/:id" element={<ProductFormPage />} />
                     <Route path="/raw-materials/:id" element={<RawMaterialFormPage />} />
                     <Route path="/raw-materials/new" element={<RawMaterialFormPage />} />
+                    <Route path="*" element={<NotFoundPage />} />
 
                 </Route>
-
-                <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
         </BrowserRouter>
     );
