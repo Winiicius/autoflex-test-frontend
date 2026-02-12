@@ -5,6 +5,7 @@ import { PrivateRoute } from "./app/router/PrivateRoute";
 import { AppShell } from "./shared/ui/AppShell";
 import { ProductsListPage } from "./features/products/pages/ProductsListPage";
 import { RawMaterialsListPage } from "./features/raw-materials/pages/RawMaterialsListPage";
+import { RawMaterialFormPage } from "./features/raw-materials/pages/RawMaterialFormPage";
 import { ProductionPage } from "./features/production/pages/ProductionPage";
 
 export default function App() {
@@ -17,6 +18,7 @@ export default function App() {
                     element={
                         <PrivateRoute>
                             <AppShell />
+
                         </PrivateRoute>
                     }
                 >
@@ -24,6 +26,9 @@ export default function App() {
                     <Route path="/products" element={<ProductsListPage />} />
                     <Route path="/raw-materials" element={<RawMaterialsListPage />} />
                     <Route path="/production" element={<ProductionPage />} />
+                    <Route path="/raw-materials/:id" element={<RawMaterialFormPage />} />
+                    <Route path="/raw-materials/new" element={<RawMaterialFormPage />} />
+
                 </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />

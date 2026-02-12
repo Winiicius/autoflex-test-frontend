@@ -8,8 +8,8 @@ export function LoginPage() {
     const navigate = useNavigate();
     const { login } = useAuth();
 
-    const [email, setEmail] = useState(String);
-    const [password, setPassword] = useState(String);
+    const [email, setEmail] = useState("admin@autoflex.com");
+    const [password, setPassword] = useState("autoflex");
     const [loading, setLoading] = useState(false);
 
     const onSubmit = async () => {
