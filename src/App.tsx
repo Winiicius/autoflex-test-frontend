@@ -2,6 +2,10 @@ import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
 import { LoginPage } from "./features/auth/pages/LoginPage";
 import { DashboardPage } from "./features/dashboard/pages/DashboardPage";
 import { PrivateRoute } from "./app/router/PrivateRoute";
+import { AppShell } from "./shared/ui/AppShell";
+import { ProductsListPage } from "./features/products/pages/ProductsListPage";
+import { RawMaterialsListPage } from "./features/raw-materials/pages/RawMaterialsListPage";
+import { ProductionPage } from "./features/production/pages/ProductionPage";
 
 export default function App() {
     return (
@@ -10,13 +14,17 @@ export default function App() {
                 <Route path="/login" element={<LoginPage />} />
 
                 <Route
-                    path="/"
                     element={
                         <PrivateRoute>
-                            <DashboardPage />
+                            <AppShell />
                         </PrivateRoute>
                     }
-                />
+                >
+                    <Route path="/" element={<DashboardPage />} />
+                    <Route path="/products" element={<ProductsListPage />} />
+                    <Route path="/raw-materials" element={<RawMaterialsListPage />} />
+                    <Route path="/production" element={<ProductionPage />} />
+                </Route>
 
                 <Route path="*" element={<Navigate to="/" replace />} />
             </Routes>
