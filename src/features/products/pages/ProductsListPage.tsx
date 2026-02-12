@@ -1,9 +1,16 @@
 import {
+    AlertDialog,
+    AlertDialogBody,
+    AlertDialogContent,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogOverlay,
     Box,
     Button,
     Heading,
     HStack,
     IconButton,
+    Input,
     Spinner,
     Table,
     Tbody,
@@ -12,41 +19,46 @@ import {
     Thead,
     Tr,
     useToast,
-    AlertDialog,
-    AlertDialogBody,
-    AlertDialogFooter,
-    AlertDialogHeader,
-    AlertDialogContent,
-    AlertDialogOverlay,
 } from "@chakra-ui/react";
-import { useRef } from "react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import { FiEdit, FiPlus, FiTrash } from "react-icons/fi";
 import { Link } from "react-router-dom";
-import { productService } from "../productService";
-import type { Product } from "../types";
+
 import { useAuth } from "../../auth/AuthContext";
 import { isAdmin } from "../../auth/permissions";
+import { productService } from "../productService";
+import type { Product } from "../types";
 
 export function ProductsListPage() {
     const toast = useToast();
 
+    const { user } = useAuth();
+    const canManage = isAdmin(user);
+
     const [items, setItems] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [filters, setFilters] = useState({ name: "", code: "" });
+    const [debouncedFilters, setDebouncedFilters] = useState(filters);
 
     const [isOpen, setIsOpen] = useState(false);
     const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
     const cancelRef = useRef<HTMLButtonElement>(null);
 
-    const { user } = useAuth();
-    const canManage = isAdmin(user);
+    const buildParams = () => {
+        const params: Record<string, any> = {};
 
+        if (debouncedFilters.code.trim()) params.code = debouncedFilters.code.trim();
+        if (debouncedFilters.name.trim()) params.name = debouncedFilters.name.trim();
+
+        return params;
+    };
 
     const load = async () => {
         setLoading(true);
         try {
-            const data = await productService.list();
-
+            const params = buildParams();
+            const data = await productService.list(params);
             setItems(data);
         } catch (err: any) {
             toast({
@@ -60,8 +72,17 @@ export function ProductsListPage() {
     };
 
     useEffect(() => {
+        const timeout = setTimeout(() => {
+            setDebouncedFilters(filters);
+        }, 700);
+
+        return () => clearTimeout(timeout);
+    }, [filters]);
+
+    useEffect(() => {
         load();
-    }, []);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [debouncedFilters]);
 
     const handleOpenDelete = (product: Product) => {
         setSelectedProduct(product);
@@ -101,60 +122,92 @@ export function ProductsListPage() {
                         New Product
                     </Button>
                 )}
-
             </HStack>
 
-            {loading ? (
-                <Spinner />
-            ) : (
-                <Box overflowX="auto" bg="white" borderWidth="1px" borderRadius="8px">
-                    <Table size="sm">
-                        <Thead>
-                            <Tr>
-                                <Th>Code</Th>
-                                <Th>Name</Th>
-                                <Th isNumeric>Price</Th>
-                                <Th></Th>
+            <HStack spacing={4} mb={4}>
+                <Input
+                    placeholder="Search by code"
+                    value={filters.code}
+                    onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, code: e.target.value }))
+                    }
+                />
+
+                <Input
+                    placeholder="Search by name"
+                    value={filters.name}
+                    onChange={(e) =>
+                        setFilters((prev) => ({ ...prev, name: e.target.value }))
+                    }
+                />
+
+                <Button
+                    variant="outline"
+                    onClick={() => setFilters({ name: "", code: "" })}
+                >
+                    Clear
+                </Button>
+            </HStack>
+
+            <Box mt={2} />
+
+            <Box
+                position="relative"
+                overflowX="auto"
+                bg="white"
+                borderWidth="1px"
+                borderRadius="8px"
+            >
+                {loading && (
+                    <Spinner position="absolute" top="12px" right="12px" size="sm" />
+                )}
+
+                <Table size="sm">
+                    <Thead>
+                        <Tr>
+                            <Th>Code</Th>
+                            <Th>Name</Th>
+                            <Th isNumeric>Price</Th>
+                            <Th></Th>
+                        </Tr>
+                    </Thead>
+
+                    <Tbody>
+                        {items.map((item) => (
+                            <Tr key={item.id}>
+                                <Td>{item.code}</Td>
+                                <Td>{item.name}</Td>
+                                <Td isNumeric>{item.price.toFixed(2)}</Td>
+
+                                <Td>
+                                    {canManage && (
+                                        <HStack justify="flex-end">
+                                            <IconButton
+                                                aria-label="Edit"
+                                                icon={<FiEdit />}
+                                                as={Link}
+                                                to={`/products/${item.id}`}
+                                                size="sm"
+                                                variant="ghost"
+                                            />
+
+                                            <IconButton
+                                                aria-label="Delete"
+                                                icon={<FiTrash />}
+                                                size="sm"
+                                                colorScheme="red"
+                                                variant="ghost"
+                                                onClick={() => handleOpenDelete(item)}
+                                            />
+                                        </HStack>
+                                    )}
+                                </Td>
                             </Tr>
-                        </Thead>
+                        ))}
+                    </Tbody>
+                </Table>
+            </Box>
 
-                        <Tbody>
-                            {items.map((item) => (
-                                <Tr key={item.id}>
-                                    <Td>{item.code}</Td>
-                                    <Td>{item.name}</Td>
-                                    <Td isNumeric>{item.price.toFixed(2)}</Td>
-
-                                    <Td>
-                                        {canManage && (
-                                            <HStack justify="flex-end">
-                                                <IconButton
-                                                    aria-label="Edit"
-                                                    icon={<FiEdit />}
-                                                    as={Link}
-                                                    to={`/products/${item.id}`}
-                                                    size="sm"
-                                                    variant="ghost"
-                                                />
-
-                                                <IconButton
-                                                    aria-label="Delete"
-                                                    icon={<FiTrash />}
-                                                    size="sm"
-                                                    colorScheme="red"
-                                                    variant="ghost"
-                                                    onClick={() => handleOpenDelete(item)}
-
-                                                />
-                                            </HStack>
-                                        )}
-                                    </Td>
-                                </Tr>
-                            ))}
-                        </Tbody>
-                    </Table>
-                </Box>
-            )}
             <AlertDialog
                 isOpen={isOpen}
                 leastDestructiveRef={cancelRef}
@@ -168,26 +221,21 @@ export function ProductsListPage() {
 
                         <AlertDialogBody>
                             Are you sure you want to delete{" "}
-                            <strong>{selectedProduct?.name}</strong>?
-                            This action cannot be undone.
+                            <strong>{selectedProduct?.name}</strong>? This action cannot be
+                            undone.
                         </AlertDialogBody>
 
                         <AlertDialogFooter>
                             <Button ref={cancelRef} onClick={handleCloseDelete}>
                                 Cancel
                             </Button>
-                            <Button
-                                colorScheme="red"
-                                onClick={handleConfirmDelete}
-                                ml={3}
-                            >
+                            <Button colorScheme="red" onClick={handleConfirmDelete} ml={3}>
                                 Delete
                             </Button>
                         </AlertDialogFooter>
                     </AlertDialogContent>
                 </AlertDialogOverlay>
             </AlertDialog>
-
         </Box>
     );
 }

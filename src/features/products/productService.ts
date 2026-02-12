@@ -2,8 +2,13 @@ import { http } from "../../shared/api/http";
 import type { Product, ProductMaterialsRequest, ProductRequest } from "./types";
 
 export const productService = {
-  list: async (): Promise<Product[]> => {
-    const { data } = await http.get<Product[]>("/products");
+  list: async (params?: {
+    name?: string;
+    code?: string;
+  }): Promise<Product[]> => {
+    const { data } = await http.get<Product[]>("/products", {
+      params,
+    });
     return data;
   },
 
