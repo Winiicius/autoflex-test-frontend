@@ -13,7 +13,14 @@ import {
     Thead,
     Tr,
     useToast,
+    AlertDialog,
+    AlertDialogBody,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogOverlay,
 } from "@chakra-ui/react";
+import { useRef } from "react";
 import { useEffect, useState } from "react";
 import { FiEdit, FiTrash, FiPlus } from "react-icons/fi";
 import { Link } from "react-router-dom";
@@ -29,6 +36,10 @@ export function RawMaterialsListPage() {
     const [loading, setLoading] = useState(true);
     const [filters, setFilters] = useState({ name: "", code: "" });
     const [debouncedFilters, setDebouncedFilters] = useState(filters);
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedId, setSelectedId] = useState<number | null>(null);
+    const cancelRef = useRef<HTMLButtonElement>(null);
 
     const { user } = useAuth();
     const canManage = isAdmin(user);
@@ -63,11 +74,21 @@ export function RawMaterialsListPage() {
         load();
     }, [debouncedFilters]);
 
-    const onDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this item?")) return;
+    const handleOpenDelete = (id: number) => {
+        setSelectedId(id);
+        setIsOpen(true);
+    };
+
+    const handleCloseDelete = () => {
+        setIsOpen(false);
+        setSelectedId(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedId) return;
 
         try {
-            await rawMaterialService.remove(id);
+            await rawMaterialService.remove(selectedId);
             toast({ title: "Deleted successfully", status: "success" });
             load();
         } catch (err: any) {
@@ -76,6 +97,8 @@ export function RawMaterialsListPage() {
                 description: err?.message,
                 status: "error",
             });
+        } finally {
+            handleCloseDelete();
         }
     };
 
@@ -160,7 +183,7 @@ export function RawMaterialsListPage() {
                                                 size="sm"
                                                 colorScheme="red"
                                                 variant="ghost"
-                                                onClick={() => onDelete(item.id)}
+                                                onClick={() => handleOpenDelete(item.id)}
                                             />
                                         </HStack>
                                     )}
@@ -170,7 +193,36 @@ export function RawMaterialsListPage() {
                     </Tbody>
                 </Table>
             </Box>
+            <AlertDialog
+                isOpen={isOpen}
+                leastDestructiveRef={cancelRef}
+                onClose={handleCloseDelete}
+            >
+                <AlertDialogOverlay>
+                    <AlertDialogContent>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                            Delete Raw Material
+                        </AlertDialogHeader>
+
+                        <AlertDialogBody>
+                            Are you sure? This action cannot be undone.
+                        </AlertDialogBody>
+
+                        <AlertDialogFooter>
+                            <Button ref={cancelRef} onClick={handleCloseDelete}>
+                                Cancel
+                            </Button>
+                            <Button
+                                colorScheme="red"
+                                onClick={handleConfirmDelete}
+                                ml={3}
+                            >
+                                Delete
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialogOverlay>
+            </AlertDialog>
         </Box>
     );
-
 }

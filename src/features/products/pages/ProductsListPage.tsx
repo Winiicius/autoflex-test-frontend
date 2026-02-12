@@ -12,7 +12,14 @@ import {
     Thead,
     Tr,
     useToast,
+    AlertDialog,
+    AlertDialogBody,
+    AlertDialogFooter,
+    AlertDialogHeader,
+    AlertDialogContent,
+    AlertDialogOverlay,
 } from "@chakra-ui/react";
+import { useRef } from "react";
 import { useEffect, useState } from "react";
 import { FiEdit, FiPlus, FiTrash } from "react-icons/fi";
 import { Link } from "react-router-dom";
@@ -26,8 +33,14 @@ export function ProductsListPage() {
 
     const [items, setItems] = useState<Product[]>([]);
     const [loading, setLoading] = useState(true);
+
+    const [isOpen, setIsOpen] = useState(false);
+    const [selectedProduct, setSelectedProduct] = useState<Product | null>(null);
+    const cancelRef = useRef<HTMLButtonElement>(null);
+
     const { user } = useAuth();
     const canManage = isAdmin(user);
+
 
     const load = async () => {
         setLoading(true);
@@ -50,11 +63,21 @@ export function ProductsListPage() {
         load();
     }, []);
 
-    const onDelete = async (id: number) => {
-        if (!confirm("Are you sure you want to delete this product?")) return;
+    const handleOpenDelete = (product: Product) => {
+        setSelectedProduct(product);
+        setIsOpen(true);
+    };
+
+    const handleCloseDelete = () => {
+        setIsOpen(false);
+        setSelectedProduct(null);
+    };
+
+    const handleConfirmDelete = async () => {
+        if (!selectedProduct) return;
 
         try {
-            await productService.remove(id);
+            await productService.remove(selectedProduct.id);
             toast({ title: "Deleted successfully", status: "success" });
             load();
         } catch (err: any) {
@@ -63,6 +86,8 @@ export function ProductsListPage() {
                 description: err?.message,
                 status: "error",
             });
+        } finally {
+            handleCloseDelete();
         }
     };
 
@@ -118,7 +143,8 @@ export function ProductsListPage() {
                                                     size="sm"
                                                     colorScheme="red"
                                                     variant="ghost"
-                                                    onClick={() => onDelete(item.id)}
+                                                    onClick={() => handleOpenDelete(item)}
+
                                                 />
                                             </HStack>
                                         )}
@@ -129,6 +155,39 @@ export function ProductsListPage() {
                     </Table>
                 </Box>
             )}
+            <AlertDialog
+                isOpen={isOpen}
+                leastDestructiveRef={cancelRef}
+                onClose={handleCloseDelete}
+            >
+                <AlertDialogOverlay>
+                    <AlertDialogContent>
+                        <AlertDialogHeader fontSize="lg" fontWeight="bold">
+                            Delete Product
+                        </AlertDialogHeader>
+
+                        <AlertDialogBody>
+                            Are you sure you want to delete{" "}
+                            <strong>{selectedProduct?.name}</strong>?
+                            This action cannot be undone.
+                        </AlertDialogBody>
+
+                        <AlertDialogFooter>
+                            <Button ref={cancelRef} onClick={handleCloseDelete}>
+                                Cancel
+                            </Button>
+                            <Button
+                                colorScheme="red"
+                                onClick={handleConfirmDelete}
+                                ml={3}
+                            >
+                                Delete
+                            </Button>
+                        </AlertDialogFooter>
+                    </AlertDialogContent>
+                </AlertDialogOverlay>
+            </AlertDialog>
+
         </Box>
     );
 }
