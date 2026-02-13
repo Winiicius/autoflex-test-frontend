@@ -83,6 +83,7 @@ export function ProductFormPage() {
                             product.materials?.map((m) => ({
                                 rawMaterialId: m.rawMaterialId,
                                 quantity: m.quantity,
+                                unit: m.unit
                             })) ?? [{ rawMaterialId: 0, quantity: 0 }],
                     });
                 }
@@ -155,7 +156,7 @@ export function ProductFormPage() {
                             <Heading size="md">Materials</Heading>
                             <Button
                                 variant="outline"
-                                onClick={() => append({ rawMaterialId: 0, quantity: 0 })}
+                                onClick={() => append({ rawMaterialId: 0, quantity: 0, unit: "" })}
                             >
                                 Add
                             </Button>
@@ -171,6 +172,10 @@ export function ProductFormPage() {
                             {fields.map((field, index) => {
                                 const rmError = errors.materials?.[index]?.rawMaterialId?.message;
                                 const qtyError = errors.materials?.[index]?.quantity?.message;
+                                const selectedMaterialId = Number(watch(`materials.${index}.rawMaterialId`));
+                                const selectedMaterial = allMaterials.find(
+                                    (rm) => rm.id === selectedMaterialId
+                                );
 
                                 return (
                                     <HStack key={field.id} align="start">
@@ -191,12 +196,25 @@ export function ProductFormPage() {
                                             </Select>
                                             <FormErrorMessage>{rmError as string}</FormErrorMessage>
                                         </FormControl>
-
+                                        <FormControl>
+                                            <FormLabel fontSize="sm">Unit</FormLabel>
+                                            <Input
+                                                value={selectedMaterial?.unit ?? ""}
+                                                size="sm"
+                                                isReadOnly
+                                                bg="gray.100"
+                                                color="gray.600"
+                                                _readOnly={{
+                                                    cursor: "not-allowed",
+                                                }}
+                                            />
+                                        </FormControl>
                                         <FormControl isInvalid={!!qtyError}>
                                             <FormLabel fontSize="sm">Quantity</FormLabel>
                                             <Input type="number" step="0.01" {...register(`materials.${index}.quantity`)} />
                                             <FormErrorMessage>{qtyError as string}</FormErrorMessage>
                                         </FormControl>
+
 
                                         <Button
                                             mt="28px"
