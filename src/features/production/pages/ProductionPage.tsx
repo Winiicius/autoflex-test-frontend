@@ -26,6 +26,7 @@ import {
 } from "react-icons/fi";
 import { productionService } from "../productionService";
 import type { ProductionCapacityItem } from "../type";
+import { formatUnit } from "../../../shared/utils/unit";
 
 function money(n: number) {
     return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -298,7 +299,7 @@ export function ProductionPage() {
                                                                             <Td isNumeric>
                                                                                 {m.stockQuantity}
                                                                             </Td>
-                                                                            <Td>{m.unit}</Td>
+                                                                            <Td>{formatUnit(m.unit)}</Td>
                                                                             <Td>
                                                                                 <Badge
                                                                                     colorScheme={ok ? "green" : "red"}

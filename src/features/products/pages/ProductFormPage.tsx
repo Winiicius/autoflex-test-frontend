@@ -27,6 +27,7 @@ import { isAdmin } from "../../auth/permissions";
 
 import { productSchema } from "../product.schema";
 import type { ProductFormValues } from "../product.schema";
+import { formatUnit } from "../../../shared/utils/unit";
 
 export function ProductFormPage() {
     const { id } = useParams();
@@ -156,7 +157,7 @@ export function ProductFormPage() {
                             <Heading size="md">Materials</Heading>
                             <Button
                                 variant="outline"
-                                onClick={() => append({ rawMaterialId: 0, quantity: 0, unit: "" })}
+                                onClick={() => append({ rawMaterialId: 0, quantity: 0 })}
                             >
                                 Add
                             </Button>
@@ -199,7 +200,7 @@ export function ProductFormPage() {
                                         <FormControl>
                                             <FormLabel fontSize="sm">Unit</FormLabel>
                                             <Input
-                                                value={selectedMaterial?.unit ?? ""}
+                                                value={formatUnit(selectedMaterial?.unit) ?? ""}
                                                 size="sm"
                                                 isReadOnly
                                                 bg="gray.100"

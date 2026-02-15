@@ -127,17 +127,18 @@ export function RawMaterialFormPage() {
                     <FormControl isInvalid={!!errors.unit}>
                         <FormLabel>Unit</FormLabel>
                         <Select {...register("unit")}>
-                            <option value="KG">KG</option>
-                            <option value="UNIT">UNIT</option>
-                            <option value="L">L</option>
-                            <option value="M">M</option>
+                            <option value="KG">Kilogram</option>
+                            <option value="G">Gram</option>
+                            <option value="UNIT">Unit</option>
+                            <option value="L">Liter</option>
+                            <option value="ML">Mililiter</option>
                         </Select>
                         <FormErrorMessage>{errors.unit?.message}</FormErrorMessage>
                     </FormControl>
 
                     <FormControl isInvalid={!!errors.stockQuantity}>
                         <FormLabel>Stock Quantity</FormLabel>
-                        <Input type="number" {...register("stockQuantity")} />
+                        <Input type="number" step="0.01" {...register("stockQuantity")} />
                         <FormErrorMessage>
                             {errors.stockQuantity?.message}
                         </FormErrorMessage>
