@@ -1,4 +1,4 @@
-import { BrowserRouter, Navigate, Route, Routes } from "react-router-dom";
+import { BrowserRouter, Route, Routes } from "react-router-dom";
 import { LoginPage } from "./features/auth/pages/LoginPage";
 import { DashboardPage } from "./features/dashboard/pages/DashboardPage";
 import { PrivateRoute } from "./app/router/PrivateRoute";
@@ -9,6 +9,9 @@ import { RawMaterialFormPage } from "./features/raw-materials/pages/RawMaterialF
 import { ProductionPage } from "./features/production/pages/ProductionPage";
 import { ProductFormPage } from "./features/products/pages/ProductFormPage";
 import { NotFoundPage } from "./shared/pages/NotFoundPage";
+import { AdminRoute } from "./app/router/AdminRoute";
+import { ForbiddenPage } from "./shared/pages/ForbiddenPage";
+
 
 
 export default function App() {
@@ -29,11 +32,35 @@ export default function App() {
                     <Route path="/products" element={<ProductsListPage />} />
                     <Route path="/raw-materials" element={<RawMaterialsListPage />} />
                     <Route path="/production" element={<ProductionPage />} />
-                    <Route path="/products/new" element={<ProductFormPage />} />
-                    <Route path="/products/:id" element={<ProductFormPage />} />
-                    <Route path="/raw-materials/:id" element={<RawMaterialFormPage />} />
-                    <Route path="/raw-materials/new" element={<RawMaterialFormPage />} />
+
+                    <Route path="/products/new" element={
+                        <AdminRoute>
+                            <ProductFormPage />
+                        </AdminRoute>
+                    }
+                    />
+                    <Route path="/products/:id" element={
+                        <AdminRoute>
+                            <ProductFormPage />
+                        </AdminRoute>
+                    }
+                    />
+                    <Route path="/raw-materials/new" element={
+                        <AdminRoute>
+                            <RawMaterialFormPage />
+                        </AdminRoute>
+                    }
+                    />
+                    <Route path="/raw-materials/:id" element={
+                        <AdminRoute>
+                            <RawMaterialFormPage />
+                        </AdminRoute>
+                    }
+                    />
+
+                    <Route path="/forbidden" element={<ForbiddenPage />} />
                     <Route path="*" element={<NotFoundPage />} />
+
 
                 </Route>
             </Routes>
