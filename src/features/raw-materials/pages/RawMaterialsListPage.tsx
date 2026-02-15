@@ -28,6 +28,7 @@ import { rawMaterialService } from "../rawMaterialService";
 import type { RawMaterial } from "../types";
 import { useAuth } from "../../auth/AuthContext";
 import { isAdmin } from "../../auth/permissions";
+import { formatUnit } from "../../../shared/utils/unit";
 
 export function RawMaterialsListPage() {
     const toast = useToast();
@@ -162,7 +163,7 @@ export function RawMaterialsListPage() {
                             <Tr key={item.id}>
                                 <Td>{item.code}</Td>
                                 <Td>{item.name}</Td>
-                                <Td>{item.unit}</Td>
+                                <Td>{formatUnit(item.unit)}</Td>
                                 <Td isNumeric>{item.stockQuantity}</Td>
 
                                 <Td>

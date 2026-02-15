@@ -3,7 +3,6 @@ import { z } from "zod";
 const materialSchema = z.object({
   rawMaterialId: z.coerce.number().int().positive("Select a material"),
   quantity: z.coerce.number().positive("Quantity must be > 0"),
-  unit: z.string()
 });
 
 export const productSchema = z.object({
