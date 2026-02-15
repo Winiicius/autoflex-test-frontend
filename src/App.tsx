@@ -11,6 +11,7 @@ import { ProductFormPage } from "./features/products/pages/ProductFormPage";
 import { NotFoundPage } from "./shared/pages/NotFoundPage";
 import { AdminRoute } from "./app/router/AdminRoute";
 import { ForbiddenPage } from "./shared/pages/ForbiddenPage";
+import { RegisterPage } from "./features/auth/pages/RegisterPage";
 
 
 
@@ -18,7 +19,10 @@ export default function App() {
     return (
         <BrowserRouter>
             <Routes>
+
+                <Route path="/register" element={<RegisterPage />} />
                 <Route path="/login" element={<LoginPage />} />
+
                 <Route
                     element={
                         <PrivateRoute>

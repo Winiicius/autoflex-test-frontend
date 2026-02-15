@@ -9,7 +9,7 @@ import {
 } from "@chakra-ui/react";
 import { useState } from "react";
 import { useAuth } from "../AuthContext";
-import { Navigate, useNavigate } from "react-router-dom";
+import { Link, Navigate, useNavigate } from "react-router-dom";
 import { authService } from "../authService";
 
 export function LoginPage() {
@@ -76,6 +76,13 @@ export function LoginPage() {
                     <Button w="100%" onClick={onSubmit} isLoading={loading}>
                         Sign in
                     </Button>
+
+                    <Text fontSize="sm" color="gray.600">
+                        Don&apos;t have an account?{" "}
+                        <Text as={Link} to="/register" color="blue.600" fontWeight="semibold">
+                            Create one
+                        </Text>
+                    </Text>
                 </Stack>
             </Box>
         </Box>
