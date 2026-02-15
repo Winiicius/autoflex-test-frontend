@@ -14,6 +14,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { productionService } from "../../production/productionService";
 import type { ProductionCapacityItem } from "../../production/type";
+import { ProductionCapacityChart } from "../components/ProductionCapacityChart";
 
 function money(n: number) {
     return n.toLocaleString("en-US", { style: "currency", currency: "USD" });
@@ -168,6 +169,10 @@ export function DashboardPage() {
                         </Stat>
                     </Box>
                 </SimpleGrid>
+
+                <Box mt={4}>
+                    <ProductionCapacityChart items={items} />
+                </Box>
             </Box>
         </Box>
     );
