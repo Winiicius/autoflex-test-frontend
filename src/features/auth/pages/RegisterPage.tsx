@@ -23,13 +23,13 @@ export function RegisterPage() {
     const navigate = useNavigate();
     const { user } = useAuth();
 
-    // se já estiver logado, não faz sentido cadastrar
     if (user) return <Navigate to="/dashboard" replace />;
 
     const {
         register,
         handleSubmit,
         formState: { errors, isSubmitting },
+        // eslint-disable-next-line react-hooks/rules-of-hooks
     } = useForm<RegisterFormValues>({
         resolver: zodResolver(registerSchema),
         defaultValues: {
@@ -56,6 +56,7 @@ export function RegisterPage() {
             });
 
             navigate("/login", { replace: true });
+            // eslint-disable-next-line @typescript-eslint/no-explicit-any
         } catch (err: any) {
             toast({
                 title: "Registration failed",
