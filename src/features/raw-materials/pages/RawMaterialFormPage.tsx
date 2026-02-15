@@ -21,6 +21,8 @@ import { rawMaterialSchema } from "../rawMaterial.schema";
 import type { RawMaterialFormValues } from "../rawMaterial.schema";
 import { useForm } from "react-hook-form";
 import { zodResolver } from "@hookform/resolvers/zod";
+import type { Resolver } from "react-hook-form";
+
 
 export function RawMaterialFormPage() {
     const { id } = useParams();
@@ -40,7 +42,7 @@ export function RawMaterialFormPage() {
         reset,
         formState: { errors, isSubmitting },
     } = useForm<RawMaterialFormValues>({
-        resolver: zodResolver(rawMaterialSchema),
+        resolver: zodResolver(rawMaterialSchema) as unknown as Resolver<RawMaterialFormValues>,
         defaultValues: {
             code: "",
             name: "",
@@ -48,6 +50,7 @@ export function RawMaterialFormPage() {
             stockQuantity: 0,
         },
     });
+
 
     useEffect(() => {
         if (!canManage) {
