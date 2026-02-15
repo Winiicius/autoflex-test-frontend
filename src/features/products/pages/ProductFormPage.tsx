@@ -16,7 +16,7 @@ import {
 import { useEffect, useMemo, useState } from "react";
 import { useNavigate, useParams } from "react-router-dom";
 import { useForm, useFieldArray } from "react-hook-form";
-import { zodResolver } from "@hookform/resolvers/zod";
+import type { Resolver } from "react-hook-form";
 
 import { productService } from "../productService";
 import { rawMaterialService } from "../../raw-materials/rawMaterialService";
@@ -28,6 +28,7 @@ import { isAdmin } from "../../auth/permissions";
 import { productSchema } from "../product.schema";
 import type { ProductFormValues } from "../product.schema";
 import { formatUnit } from "../../../shared/utils/unit";
+import { zodResolver } from "@hookform/resolvers/zod";
 
 export function ProductFormPage() {
     const { id } = useParams();
@@ -50,7 +51,7 @@ export function ProductFormPage() {
         formState: { errors, isSubmitting },
         watch,
     } = useForm<ProductFormValues>({
-        resolver: zodResolver(productSchema),
+        resolver: zodResolver(productSchema) as unknown as Resolver<ProductFormValues>,
         defaultValues: {
             code: "",
             name: "",

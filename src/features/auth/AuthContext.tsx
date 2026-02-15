@@ -3,16 +3,11 @@ import {
     useContext,
     useEffect,
     useState,
-    ReactNode,
+    type ReactNode,
 } from "react";
 import { Spinner, Center } from "@chakra-ui/react";
+import type { User } from "./types";
 
-interface User {
-    id: number;
-    name: string;
-    email: string;
-    role: string;
-}
 interface AuthContextType {
     user: User | null;
     token: string | null;
