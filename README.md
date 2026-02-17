@@ -154,10 +154,7 @@ Esses documentos detalham:
 
 # Deploy
 
-(Substitua pelos links reais quando publicar)
-
-Backend: https://...
-Frontend: https://...
+https://autoflex-inventory.netlify.app
 
 ---
 
